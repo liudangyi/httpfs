@@ -1,4 +1,6 @@
 obj-m := httpfs.o
+httpfs-objs := main.o klibhttp.o
+
 EXTRA_CFLAGS += -DDEBUG
 
 all:

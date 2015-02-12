@@ -6,6 +6,8 @@
 #include <linux/slab.h>
 #include <asm/uaccess.h>    /* copy_to_user */
 
+#include "klibhttp.h"
+
 /*
  * Boilerplate stuff.
  */
@@ -26,7 +28,14 @@ MODULE_AUTHOR("Leedy");
  */
 static int httpfs_open(struct inode *inode, struct file *filp)
 {
-    filp->private_data = inode->i_private;
+    char *response;
+
+    pr_debug("%s: opening %s\n", __func__, (char *) inode->i_private);
+    response = http_open_url(inode->i_private);
+    if (response)
+        filp->private_data = response;
+    else
+        return http_get_errno();
     return 0;
 }
 
@@ -52,11 +61,18 @@ static ssize_t httpfs_read_file(struct file *filp, char *buf,
     return count;
 }
 
+int httpfs_release(struct inode *inode, struct file *file)
+{
+    pr_debug("%s: closing %s\n", __func__, (char *) inode->i_private);
+    kfree(file->private_data);
+    return 0;
+}
+
+
 /*
  * Dentry cleanup function, here we need to free the url memory.
  */
 void httpfs_d_iput(struct dentry *dentry, struct inode *inode) {
-    pr_debug("%s: freeing %s\n", __func__, (char *) inode->i_private);
     kfree(inode->i_private);
     iput(inode);
 }
@@ -67,7 +83,7 @@ struct dentry *httpfs_inode_lookup(struct inode *dir,
 
 const struct file_operations httpfs_file_operations = {
     .open           = httpfs_open,
-    // .release        = httpfs_close,
+    .release        = httpfs_release,
     .read           = httpfs_read_file,
 };
 
@@ -112,7 +128,6 @@ struct dentry *httpfs_inode_lookup(struct inode *dir,
         if (count != 0)
             strcat(fullpath, "/");
     }
-    pr_debug("%s: creating %s\n", __func__, fullpath);
 
     inode = new_inode(dir->i_sb);
     if (!inode) {
