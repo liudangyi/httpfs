@@ -8,7 +8,7 @@ Mount the web as a directory. Use `open` system call to open an URL!
 2. `make`
 3. `sudo insmod httpfs.ko`
 4. `sudo mount -t httpfs none http:`
-5. Try `cat http://baidu.com`
+5. Try `cat http://baidu.com` / `cat http://wtfismyip.com/text` / `cat http://baidu.com/abc/def`
 6. If you are tired, `sudo umount http: && sudo rmmod httpfs`
 
 # Problems
