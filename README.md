@@ -1,6 +1,6 @@
 # HTTPFS
 
-Mount the web as a directory.
+Mount the web as a directory. Use `open` system call to open an URL!
 
 # Usage
 
@@ -14,6 +14,7 @@ Mount the web as a directory.
 # Problems
 
 1. Only HTTP 1.0 is supported right now.
-2. Files are downloaded upon `open`. However, [Range](http://en.wikipedia.org/wiki/Byte_serving) is a better choice.
-3. Because of 2, it's hard to support larger files.
-4. There's little promise of further work, since the whole thing should be implemented in user space (using [FUSE](http://en.wikipedia.org/wiki/Filesystem_in_Userspace) with [libcurl](http://curl.haxx.se/libcurl/)).
+2. `cp` is not supported since a little hack on VFS (to make it possible to open a directory).
+3. Files are downloaded upon `open`. However, [Range](http://en.wikipedia.org/wiki/Byte_serving) is a better choice.
+4. Because of 2, it's hard to support larger files.
+5. There's little promise of further work, since the whole thing should be implemented in user space (using [FUSE](http://en.wikipedia.org/wiki/Filesystem_in_Userspace) with [libcurl](http://curl.haxx.se/libcurl/)).
