@@ -32,10 +32,10 @@ static int httpfs_open(struct inode *inode, struct file *filp)
 
     pr_debug("%s: opening %s\n", __func__, (char *) inode->i_private);
     response = http_open_url(inode->i_private);
-    if (response)
-        filp->private_data = response;
-    else
-        return http_get_errno();
+    BUG_ON(response == NULL);
+    if (IS_ERR(response))
+        return PTR_ERR(response);
+    filp->private_data = response;
     return 0;
 }
 
@@ -61,7 +61,7 @@ static ssize_t httpfs_read_file(struct file *filp, char *buf,
     return count;
 }
 
-int httpfs_release(struct inode *inode, struct file *file)
+static int httpfs_release(struct inode *inode, struct file *file)
 {
     pr_debug("%s: closing %s\n", __func__, (char *) inode->i_private);
     kfree(file->private_data);
@@ -72,27 +72,27 @@ int httpfs_release(struct inode *inode, struct file *file)
 /*
  * Dentry cleanup function, here we need to free the url memory.
  */
-void httpfs_d_iput(struct dentry *dentry, struct inode *inode) {
+static void httpfs_d_iput(struct dentry *dentry, struct inode *inode) {
     kfree(inode->i_private);
     iput(inode);
 }
 
 
-struct dentry *httpfs_inode_lookup(struct inode *dir,
+static struct dentry *httpfs_inode_lookup(struct inode *dir,
         struct dentry *dentry, unsigned int flags);
 
-const struct file_operations httpfs_file_operations = {
-    .open           = httpfs_open,
-    .release        = httpfs_release,
-    .read           = httpfs_read_file,
+static const struct file_operations httpfs_file_operations = {
+    .open    = httpfs_open,
+    .release = httpfs_release,
+    .read    = httpfs_read_file,
 };
 
-const struct dentry_operations httpfs_dentry_operations = {
+static const struct dentry_operations httpfs_dentry_operations = {
     .d_delete = always_delete_dentry,
-    .d_iput = httpfs_d_iput,
+    .d_iput   = httpfs_d_iput,
 };
 
-const struct inode_operations httpfs_inode_operations = {
+static const struct inode_operations httpfs_inode_operations = {
     .lookup = httpfs_inode_lookup,
 };
 
@@ -104,7 +104,7 @@ static const struct super_operations simple_super_operations = {
 /*
  * Lookup (in fact create) an inode.
  */
-struct dentry *httpfs_inode_lookup(struct inode *dir,
+static struct dentry *httpfs_inode_lookup(struct inode *dir,
     struct dentry *dentry, unsigned int flags)
 {
     struct qstr paths[TMPSIZE];

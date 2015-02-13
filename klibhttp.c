@@ -19,13 +19,13 @@ static char *http_send(struct socket *sock, char *str)
     mm_segment_t oldmm;
     char *response;
 
-    msg.msg_name     = 0;
-    msg.msg_namelen  = 0;
-    msg.msg_iov      = &iov;
-    msg.msg_iovlen   = 1;
-    msg.msg_control  = NULL;
+    msg.msg_name       = 0;
+    msg.msg_namelen    = 0;
+    msg.msg_iov        = &iov;
+    msg.msg_iovlen     = 1;
+    msg.msg_control    = NULL;
     msg.msg_controllen = 0;
-    msg.msg_flags    = 0;
+    msg.msg_flags      = 0;
 
     oldmm = get_fs(); set_fs(KERNEL_DS);
 
@@ -35,6 +35,7 @@ static char *http_send(struct socket *sock, char *str)
         iov.iov_base = str + (total - left);
         len = sock_sendmsg(sock, &msg, left);
         if (len < 0) {
+            errno = len;
             pr_err("%s: sock_sendmsg error!\n", __func__);
             return NULL;
         }
@@ -55,6 +56,7 @@ static char *http_send(struct socket *sock, char *str)
         len = sock_recvmsg(sock, &msg, left, 0);
         pr_debug("%s: sock_recvmsg %d bytes\n", __func__, len);
         if (len < 0) {
+            errno = len;
             pr_err("%s: sock_recvmsg error!\n", __func__);
             return NULL;
         }
@@ -145,9 +147,5 @@ out:
 out2:
     kfree(hostname);
     kfree(request);
-    return res;
-}
-
-int http_get_errno() {
-    return errno;
+    return res ? res : ERR_PTR(errno);
 }
